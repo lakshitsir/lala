@@ -4,7 +4,7 @@
   "main": "api/bot.js",
   "type": "module",
   "dependencies": {
-    "@google/generative-ai": "^0.2.0",
-    "telegraf": "^4.16.3"
+    "@google/generative-ai": "latest",
+    "telegraf": "latest"
   }
 }
