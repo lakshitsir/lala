@@ -22,7 +22,7 @@ bot.command('ai', async (ctx) => {
 
     try {
         // Gemini 1.5 Flash (Fast and Free)
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
 
