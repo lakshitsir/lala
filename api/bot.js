@@ -1,19 +1,16 @@
 import { Telegraf } from 'telegraf';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// APNI KEYS YAHAN DIRECT PASTE KARO (Quotes "" ke andar)
-const BOT_TOKEN = "8062934304:AAGkF1nkuDWX_dGDEqkm85dmd050EGRQPXU";
-const GEMINI_API_KEY = "AIzaSyCrh0QDQ5XIqAdgjd1uEJFd9b2vAWTgs6s";
+// APNI KEYS YAHAN DIRECT PASTE KARO
+const BOT_TOKEN = "8062934304:AAGkF1nkuDWX_dGDEqkm85dmd050EGRQPXU"; 
+const GROQ_API_KEY = "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";
 
 const bot = new Telegraf(BOT_TOKEN);
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // /ai command ka logic
 bot.command('ai', async (ctx) => {
-    // '/ai ' ke baad wala message nikalne ke liye
+    // '/ai ' ke baad wala message nikalna
     const prompt = ctx.message.text.split(' ').slice(1).join(' ');
 
-    // Agar user ne sirf /ai bheja aur sawal nahi pucha
     if (!prompt) {
         return ctx.reply('Bhai, koi sawal toh likho! Jaise: /ai who is Jhonny sins\n\ndev @lakshitpatidar', {
             reply_to_message_id: ctx.message.message_id
@@ -21,42 +18,48 @@ bot.command('ai', async (ctx) => {
     }
 
     try {
-        // Gemini 1.5 Flash (Fast and Free)
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        // Groq API ko call karna
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${GROQ_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "llama-3.3-70b-versatile",
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
 
-        // Tumhara custom format
-        const finalMessage = `${responseText}\n\ndev @lakshitpatidar`;
+        const data = await response.json();
+
+        // Agar Groq se error aaya toh usko trigger karna
+        if (!response.ok) {
+            throw new Error(`Groq API Error: ${data.error?.message || response.status}`);
+        }
+
+        // Groq ka reply nikalna
+        const replyText = data.choices[0].message.content;
         
-        // Final message send karna, sath me user ke message ko quote (reply) karna
+        // Tumhara custom format
+        const finalMessage = `${replyText}\n\ndev @lakshitpatidar`;
+        
         await ctx.reply(finalMessage, {
             reply_to_message_id: ctx.message.message_id
         });
 
     } catch (error) {
-        console.error(error);
+        // ⚠️ ASLI ERROR SIRF VERCEL LOGS ME DIKHEGA (Safe)
+        console.error("System Error Log:", error);
         
-        // SECURITY LAYER: API Key Hide karne ka logic
-        let errorMessage = error.message || "Kuch technical dikkat aayi hai.";
-        
-        // Agar error string me tumhari manual key hui, toh usko mask kar denge
-        if (GEMINI_API_KEY && GEMINI_API_KEY !== "YAHAN_APNA_GEMINI_API_KEY_DALO") {
-            errorMessage = errorMessage.split(GEMINI_API_KEY).join("[HIDDEN_GEMINI_KEY]");
-        }
-        if (BOT_TOKEN && BOT_TOKEN !== "YAHAN_APNA_TELEGRAM_BOT_TOKEN_DALO") {
-            errorMessage = errorMessage.split(BOT_TOKEN).join("[HIDDEN_BOT_TOKEN]");
-        }
-
-        // Safe error message user ko bhejna aur uske message ko quote karna
-        const safeReply = `Error aagaya bhai:\n${errorMessage}\n\ndev @lakshitpatidar`;
-        await ctx.reply(safeReply, {
+        // 🔒 TELEGRAM PAR SAFE MESSAGE JAYEGA (No key leak)
+        await ctx.reply(`Bhai, kuch technical issue aa gaya hai. Thodi der baad try karna.\n\ndev @lakshitpatidar`, {
             reply_to_message_id: ctx.message.message_id
         });
     }
 });
 
-// Vercel Serverless Function ka Webhook Handler
+// Vercel Serverless Function
 export default async function handler(req, res) {
     if (req.method === 'POST') {
         try {
@@ -67,6 +70,6 @@ export default async function handler(req, res) {
             res.status(500).json({ error: 'Internal Server Error' });
         }
     } else {
-        res.status(200).send('bot ekdum mast chal raha hai! ✅');
+        res.status(200).send('Kanu ka Groq AI bot ekdum mast chal raha hai! ✅');
     }
             }
