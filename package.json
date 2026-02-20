@@ -1,0 +1,10 @@
+{
+  "name": "gemini-vercel-bot",
+  "version": "1.0.0",
+  "main": "api/bot.js",
+  "type": "module",
+  "dependencies": {
+    "@google/generative-ai": "^0.2.0",
+    "telegraf": "^4.16.3"
+  }
+}
