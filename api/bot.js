@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // APNI KEYS YAHAN DIRECT PASTE KARO (Quotes "" ke andar)
 const bot = new Telegraf("8062934304:AAGkF1nkuDWX_dGDEqkm85dmd050EGRQPXU");
-const genAI = new GoogleGenerativeAI("");
+const genAI = new GoogleGenerativeAI("AIzaSyCrh0QDQ5XIqAdgjd1uEJFd9b2vAWTgs6s");
 
 // /ai command ka logic
 bot.command('ai', async (ctx) => {
