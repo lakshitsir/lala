@@ -10,13 +10,10 @@ bot.command('ai', async (ctx) => {
     const prompt = ctx.message.text.split(' ').slice(1).join(' ');
 
     if (!prompt) {
-        return ctx.reply('Bhai, koi sawal toh likho! Jaise: /ai write a long essay\n\ndev @lakshitpatidar', {
-            reply_to_message_id: ctx.message.message_id
-        });
+        return ctx.reply('Bhai, koi sawal toh likho!\n\ndev @lakshitpatidar', { reply_to_message_id: ctx.message.message_id });
     }
 
     try {
-        // Direct Google Gemini API (Fetch Method - Koi package error nahi aayega)
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -28,49 +25,51 @@ bot.command('ai', async (ctx) => {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(`API Error: ${data.error?.message || response.status}`);
+            // Yeh line Vercel ko bata rahi hai ki exact error kya hai
+            throw new Error(`API Error Code: ${response.status} - Details: ${JSON.stringify(data.error)}`);
         }
 
-        // Gemini ka reply nikalna
         const replyText = data.candidates[0].content.parts[0].text;
         
-        // 🚀 Lamba Message Splitter (Telegram 4096 Character Limit Fix)
-        const MAX_LENGTH = 4000; // Safe limit rakhi hai
+        // Lamba Message Splitter
+        const MAX_LENGTH = 4000; 
         
         for (let i = 0; i < replyText.length; i += MAX_LENGTH) {
             let chunk = replyText.substring(i, i + MAX_LENGTH);
-            
-            // Aakhri message ke end me tumhara dev tag lagayenge
             if (i + MAX_LENGTH >= replyText.length) {
                 chunk += `\n\ndev @lakshitpatidar`;
             }
-            
-            // Ek-ek karke message bhejega
-            await ctx.reply(chunk, {
-                reply_to_message_id: ctx.message.message_id
-            });
+            await ctx.reply(chunk, { reply_to_message_id: ctx.message.message_id });
         }
 
     } catch (error) {
-        console.error("System Error Log:", error);
-        await ctx.reply(`Bhai, kuch technical issue aa gaya hai. Thodi der baad try karna.\n\ndev @lakshitpatidar`, {
+        // ERROR CATCHER: Ab bot seedha error finkega
+        let safeError = error.message || "Unknown Error";
+        
+        // Tumhari key hide karne ki ninja technique
+        if (GEMINI_API_KEY && GEMINI_API_KEY !== "YAHAN_APNA_GEMINI_API_KEY_DALO") {
+            safeError = safeError.split(GEMINI_API_KEY).join("[HIDDEN_GEMINI_KEY]");
+        }
+        if (BOT_TOKEN && BOT_TOKEN !== "YAHAN_APNA_TELEGRAM_BOT_TOKEN_DALO") {
+            safeError = safeError.split(BOT_TOKEN).join("[HIDDEN_BOT_TOKEN]");
+        }
+
+        // Yeh jayega seedha tumhare Telegram pe
+        await ctx.reply(`Asli Beemari:\n${safeError}\n\ndev @lakshitpatidar`, {
             reply_to_message_id: ctx.message.message_id
         });
     }
 });
 
-// Vercel Serverless Function
 export default async function handler(req, res) {
     if (req.method === 'POST') {
         try {
             await bot.handleUpdate(req.body);
             res.status(200).json({ status: 'success' });
         } catch (error) {
-            console.error('Update error:', error);
             res.status(500).json({ error: 'Internal Server Error' });
         }
     } else {
-        res.status(200).send('Bot naye system pe mast chal raha hai! ✅');
+        res.status(200).send('Bot Debug Mode On! ✅');
     }
             }
-            
