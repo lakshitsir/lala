@@ -1,58 +1,58 @@
 import { Telegraf } from 'telegraf';
 
-// APNI KEYS YAHAN DIRECT PASTE KARO
+// APNI ASLI KEYS YAHAN DALO
 const BOT_TOKEN = "8062934304:AAGkF1nkuDWX_dGDEqkm85dmd050EGRQPXU"; 
-const GROQ_API_KEY = "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";
+const GEMINI_API_KEY = "AIzaSyCrh0QDQ5XIqAdgjd1uEJFd9b2vAWTgs6s";
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// /ai command ka logic
 bot.command('ai', async (ctx) => {
-    // '/ai ' ke baad wala message nikalna
     const prompt = ctx.message.text.split(' ').slice(1).join(' ');
 
     if (!prompt) {
-        return ctx.reply('Bhai, koi sawal toh likho! Jaise: /ai who is Jhonny sins\n\ndev @lakshitpatidar', {
+        return ctx.reply('Bhai, koi sawal toh likho! Jaise: /ai write a long essay\n\ndev @lakshitpatidar', {
             reply_to_message_id: ctx.message.message_id
         });
     }
 
     try {
-        // Groq API ko call karna
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        // Direct Google Gemini API (Fetch Method - Koi package error nahi aayega)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${GROQ_API_KEY}`,
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
-                messages: [{ role: "user", content: prompt }]
+                contents: [{ parts: [{ text: prompt }] }]
             })
         });
 
         const data = await response.json();
 
-        // Agar Groq se error aaya toh usko trigger karna
         if (!response.ok) {
-            throw new Error(`Groq API Error: ${data.error?.message || response.status}`);
+            throw new Error(`API Error: ${data.error?.message || response.status}`);
         }
 
-        // Groq ka reply nikalna
-        const replyText = data.choices[0].message.content;
+        // Gemini ka reply nikalna
+        const replyText = data.candidates[0].content.parts[0].text;
         
-        // Tumhara custom format
-        const finalMessage = `${replyText}\n\ndev @lakshitpatidar`;
+        // 🚀 Lamba Message Splitter (Telegram 4096 Character Limit Fix)
+        const MAX_LENGTH = 4000; // Safe limit rakhi hai
         
-        await ctx.reply(finalMessage, {
-            reply_to_message_id: ctx.message.message_id
-        });
+        for (let i = 0; i < replyText.length; i += MAX_LENGTH) {
+            let chunk = replyText.substring(i, i + MAX_LENGTH);
+            
+            // Aakhri message ke end me tumhara dev tag lagayenge
+            if (i + MAX_LENGTH >= replyText.length) {
+                chunk += `\n\ndev @lakshitpatidar`;
+            }
+            
+            // Ek-ek karke message bhejega
+            await ctx.reply(chunk, {
+                reply_to_message_id: ctx.message.message_id
+            });
+        }
 
     } catch (error) {
-        // ⚠️ ASLI ERROR SIRF VERCEL LOGS ME DIKHEGA (Safe)
         console.error("System Error Log:", error);
-        
-        // 🔒 TELEGRAM PAR SAFE MESSAGE JAYEGA (No key leak)
         await ctx.reply(`Bhai, kuch technical issue aa gaya hai. Thodi der baad try karna.\n\ndev @lakshitpatidar`, {
             reply_to_message_id: ctx.message.message_id
         });
@@ -70,6 +70,7 @@ export default async function handler(req, res) {
             res.status(500).json({ error: 'Internal Server Error' });
         }
     } else {
-        res.status(200).send('Kanu ka Groq AI bot ekdum mast chal raha hai! ✅');
+        res.status(200).send('Bot naye system pe mast chal raha hai! ✅');
     }
             }
+            
