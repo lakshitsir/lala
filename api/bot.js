@@ -14,7 +14,8 @@ bot.command('ai', async (ctx) => {
     }
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        // YAHAN CHANGE KIYA HAI: gemini-1.5-flash ko gemini-pro kar diya
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -25,13 +26,12 @@ bot.command('ai', async (ctx) => {
         const data = await response.json();
 
         if (!response.ok) {
-            // Yeh line Vercel ko bata rahi hai ki exact error kya hai
             throw new Error(`API Error Code: ${response.status} - Details: ${JSON.stringify(data.error)}`);
         }
 
         const replyText = data.candidates[0].content.parts[0].text;
         
-        // Lamba Message Splitter
+        // 🚀 Lamba Message Splitter (Bade messages ab katenge nahi)
         const MAX_LENGTH = 4000; 
         
         for (let i = 0; i < replyText.length; i += MAX_LENGTH) {
@@ -43,18 +43,15 @@ bot.command('ai', async (ctx) => {
         }
 
     } catch (error) {
-        // ERROR CATCHER: Ab bot seedha error finkega
         let safeError = error.message || "Unknown Error";
         
-        // Tumhari key hide karne ki ninja technique
-        if (GEMINI_API_KEY && GEMINI_API_KEY !== "YAHAN_APNA_GEMINI_API_KEY_DALO") {
+        if (GEMINI_API_KEY && GEMINI_API_KEY !== "AIzaSyCrh0QDQ5XIqAdgjd1uEJFd9b2vAWTgs6s") {
             safeError = safeError.split(GEMINI_API_KEY).join("[HIDDEN_GEMINI_KEY]");
         }
-        if (BOT_TOKEN && BOT_TOKEN !== "YAHAN_APNA_TELEGRAM_BOT_TOKEN_DALO") {
+        if (BOT_TOKEN && BOT_TOKEN !== "8062934304:AAGkF1nkuDWX_dGDEqkm85dmd050EGRQPXU") {
             safeError = safeError.split(BOT_TOKEN).join("[HIDDEN_BOT_TOKEN]");
         }
 
-        // Yeh jayega seedha tumhare Telegram pe
         await ctx.reply(`Asli Beemari:\n${safeError}\n\ndev @lakshitpatidar`, {
             reply_to_message_id: ctx.message.message_id
         });
@@ -70,6 +67,6 @@ export default async function handler(req, res) {
             res.status(500).json({ error: 'Internal Server Error' });
         }
     } else {
-        res.status(200).send('Bot Debug Mode On! ✅');
+        res.status(200).send('Kanu ka Bot ab Gemini Pro pe chal raha hai! ✅');
     }
-            }
+                }
